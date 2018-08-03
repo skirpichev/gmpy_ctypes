@@ -229,26 +229,13 @@ class mpz(numbers.Integral):
     def __ror__(self, other):
         return self.__apply_ret(_MPZ_ior, mpz(), other, self)
 
-    def __iadd__(self, other):
-        return self.__apply_ret(_MPZ_add, self, self, other)
-
-    def __isub__(self, other):
-        return self.__apply_ret(_MPZ_sub, self, self, other)
-
-    def __imul__(self, other):
-        return self.__apply_ret(_MPZ_mul, self, self, other)
-
-    def __imod__(self, other):
-        return self.__apply_ret(_MPZ_mod, self, self, other)
-
-    def __iand__(self, other):
-        return self.__apply_ret(_MPZ_and, self, self, other)
-
-    def __ixor__(self, other):
-        return self.__apply_ret(_MPZ_xor, self, self, other)
-
-    def __ior__(self, other):
-        return self.__apply_ret(_MPZ_ior, self, self, other)
+    __iadd__ = __add__
+    __isub__ = __sub__
+    __imul__ = __mul__
+    __imod__ = __mod__
+    __iand__ = __and__
+    __ixor__ = __xor__
+    __ior__ = __or__
 
     def __abs__(self):
         return self.__apply_ret_2_0(_MPZ_abs, mpz(), self)
