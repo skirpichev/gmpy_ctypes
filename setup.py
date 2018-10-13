@@ -5,7 +5,7 @@ setup(
     version='0.1',
     author="Sergey B Kirpichev",
     author_email="skirpichev@gmail.com",
-    license="3-clause BSD",
+    license="LGPL-3.0+",
     description="GMP ctypes wrapper",
     keywords=["PyPy", "GMP"],
     classifiers=[
