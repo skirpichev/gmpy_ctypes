@@ -1,1 +1,1 @@
-from .gmp import mpq, mpz
+from .gmp import mpq, mpz, gcd, gcdext, lcm, fac

@@ -55,6 +55,12 @@ _MPZ_cmp = _libgmp.__gmpz_cmp
 _MPZ_set = _libgmp.__gmpz_set
 _MPZ_set_str = _libgmp.__gmpz_set_str
 _MPZ_get_str = _libgmp.__gmpz_get_str
+_MPZ_gcd = _libgmp.__gmpz_gcd
+_MPZ_lcm = _libgmp.__gmpz_lcm
+_MPZ_gcdext = _libgmp.__gmpz_gcdext
+_MPZ_fac = _libgmp.__gmpz_fac_ui
+_MPZ_powm = _libgmp.__gmpz_powm
+_MPZ_pow_ui = _libgmp.__gmpz_pow_ui
 
 # Gnu MP rational number routines
 _MPQ_init = _libgmp.__gmpq_init
@@ -176,16 +182,21 @@ class mpz(numbers.Integral):
         return self.__apply_ret(_MPZ_sub, mpz(), other, self)
 
     def __mul__(self, other):
-        return self.__apply_ret(_MPZ_mul, mpz(), self, other)
+        try:
+            return self.__apply_ret(_MPZ_mul, mpz(), self, other)
+        except TypeError:
+            if isinstance(other, float):
+                return int(self)*other
+            raise
 
     def __rmul__(self, other):
         return self.__apply_ret(_MPZ_mul, mpz(), other, self)
 
     def __truediv__(self, other):
-        raise NotImplementedError
+        return int(self).__truediv__(int(other))
 
     def __rtruediv__(self, other):
-        raise NotImplementedError
+        return int(other).__truediv__(int(self))
 
     def __floordiv__(self, other):
         return self.__apply_ret(_MPZ_div, mpz(), self, other)
@@ -206,7 +217,7 @@ class mpz(numbers.Integral):
         raise NotImplementedError
 
     def __rshift__(self, other):
-        raise NotImplementedError
+        return int(self).__rshift__(int(other))
 
     def __rrshift__(self, other):
         raise NotImplementedError
@@ -247,7 +258,18 @@ class mpz(numbers.Integral):
         return self.__apply_ret_2_0(_MPZ_neg, mpz(), self)
 
     def __pow__(self, other, mod=None):
-        raise NotImplementedError
+        if not isinstance(other, mpz):
+            other = mpz(other)
+        if mod is not None and not isinstance(mod, mpz):
+            mod = mpz(mod)
+        if other < 0:
+            raise ValueError
+        ret = mpz()
+        if mod:
+            _MPZ_powm(ret, self, other, mod)
+        else:
+            _MPZ_pow_ui(ret, self, int(other))
+        return ret
 
     def __rpow__(self, other, mod=None):
         raise NotImplementedError
@@ -279,6 +301,10 @@ class mpq(numbers.Rational):
         if q == 1 and isinstance(p, mpq):
             _MPQ_set(self, p)
         elif all(isinstance(_, numbers.Integral) for _ in (p, q)):
+            _MPQ_set_str(self, bytes(str(p) + "/" + str(q), 'ascii'), 10)
+        elif all(isinstance(_, numbers.Rational) for _ in (p, q)):
+            e = p/q
+            p, q = e.numerator, e.denominator
             _MPQ_set_str(self, bytes(str(p) + "/" + str(q), 'ascii'), 10)
         else:
             raise TypeError("non-rational")
@@ -335,6 +361,13 @@ class mpq(numbers.Rational):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.numerator, self.denominator))
+
+    def __eq__(self, other):
+        return (self.numerator == other.numerator and
+                self.denominator == other.denominator)
+
     def __lt__(self, other):
         return self.__apply_ret_2_1(_MPQ_cmp, self, other) < 0
 
@@ -372,7 +405,7 @@ class mpq(numbers.Rational):
         return self.__apply_ret(_MPQ_div, mpq(), other, self)
 
     def __floordiv__(self, other):
-        raise NotImplementedError
+        return mpz(int(self/other))
 
     def __rfloordiv__(self, other):
         raise NotImplementedError
@@ -402,7 +435,13 @@ class mpq(numbers.Rational):
         return self.__apply_ret_2_0(_MPQ_neg, mpq(), self)
 
     def __pow__(self, other, mod=None):
-        raise NotImplementedError
+        other = mpq(other)
+        if mod is None and all(_.denominator == 1 for _ in (self, other)):
+            if other.numerator >= 0:
+                return self.numerator**other.numerator
+            else:
+                return mpq(1)/self.numerator**(-other.numerator)
+        return NotImplemented
 
     def __rpow__(self, other, mod=None):
         raise NotImplementedError
@@ -414,7 +453,7 @@ class mpq(numbers.Rational):
         raise NotImplementedError
 
     def __int__(self):
-        raise NotImplementedError
+        return int(self.numerator//self.denominator)
 
     def __round__(self):
         raise NotImplementedError
@@ -444,6 +483,13 @@ _MPZ_cmp.argtypes = mpz, mpz
 _MPZ_set.argtypes = mpz, mpz
 _MPZ_set_str.argtypes = mpz, ctypes.c_char_p, ctypes.c_int
 _MPZ_get_str.argtypes = ctypes.c_char_p, ctypes.c_int, mpz
+_MPZ_gcd.argtypes = mpz, mpz, mpz
+_MPZ_lcm.argtypes = mpz, mpz, mpz
+_MPZ_gcdext.argtypes = mpz, mpz, mpz, mpz, mpz
+_MPZ_fac.argtypes = mpz, ctypes.c_uint
+_MPZ_powm.argtypes = mpz, mpz, mpz, mpz
+_MPZ_pow_ui.argtypes = mpz, mpz, ctypes.c_uint
+
 # non-default (int) return types
 _MPZ_get_str.restype = ctypes.c_char_p
 
@@ -463,3 +509,27 @@ _MPQ_get_num.argtypes = mpz, mpq
 _MPQ_get_den.argtypes = mpz, mpq
 # non-default (int) return types
 _MPQ_get_str.restype = ctypes.c_char_p
+
+
+def gcd(x, y):
+    ret = mpz()
+    _MPZ_gcd(ret, x, y)
+    return ret
+
+
+def gcdext(x, y):
+    g, s, t = mpz(), mpz(), mpz()
+    _MPZ_gcdext(g, s, t, x, y)
+    return g, s, t
+
+
+def lcm(x, y):
+    ret = mpz()
+    _MPZ_lcm(ret, x, y)
+    return ret
+
+
+def fac(x):
+    ret = mpz()
+    _MPZ_fac(ret, int(x))
+    return ret
