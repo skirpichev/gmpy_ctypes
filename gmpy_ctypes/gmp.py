@@ -1,9 +1,8 @@
+"""Implements gmpy2-compatible interfaces."""
+
 import ctypes
 import ctypes.util
-import math
 import numbers
-
-import hypothesis
 
 
 # find the GMP library
@@ -80,11 +79,14 @@ _MPQ_get_den = _libgmp.__gmpq_get_den
 
 
 #
-# Wrappers around Gnu MP mpz/mpq
-# ------------------------------
+# Wrappers around GNU GMP mpz/mpq
+# -------------------------------
 
 class mpz(numbers.Integral):
+    """Wrapper for GNU GMP integers."""
+
     def __init__(self, n=0):
+        """Initialize self."""
         self._mpz = _c_mpz_struct()
         self._mpzp = ctypes.byref(self._mpz)
         _MPZ_init(self)
@@ -186,7 +188,7 @@ class mpz(numbers.Integral):
             return self.__apply_ret(_MPZ_mul, mpz(), self, other)
         except TypeError:
             if isinstance(other, float):
-                return int(self)*other
+                return int(self) * other
             raise
 
     def __rmul__(self, other):
@@ -294,7 +296,10 @@ class mpz(numbers.Integral):
 
 
 class mpq(numbers.Rational):
+    """Wrapper for GNU GMP rationals."""
+
     def __init__(self, p=0, q=1):
+        """Initialize self."""
         self._mpq = _c_mpq_struct()
         self._mpqp = ctypes.byref(self._mpq)
         _MPQ_init(self)
@@ -303,7 +308,7 @@ class mpq(numbers.Rational):
         elif all(isinstance(_, numbers.Integral) for _ in (p, q)):
             _MPQ_set_str(self, bytes(str(p) + "/" + str(q), 'ascii'), 10)
         elif all(isinstance(_, numbers.Rational) for _ in (p, q)):
-            e = p/q
+            e = p / q
             p, q = e.numerator, e.denominator
             _MPQ_set_str(self, bytes(str(p) + "/" + str(q), 'ascii'), 10)
         else:
@@ -364,10 +369,6 @@ class mpq(numbers.Rational):
     def __hash__(self):
         return hash((self.numerator, self.denominator))
 
-    def __eq__(self, other):
-        return (self.numerator == other.numerator and
-                self.denominator == other.denominator)
-
     def __lt__(self, other):
         return self.__apply_ret_2_1(_MPQ_cmp, self, other) < 0
 
@@ -405,7 +406,7 @@ class mpq(numbers.Rational):
         return self.__apply_ret(_MPQ_div, mpq(), other, self)
 
     def __floordiv__(self, other):
-        return mpz(int(self/other))
+        return mpz(int(self / other))
 
     def __rfloordiv__(self, other):
         raise NotImplementedError
@@ -440,7 +441,7 @@ class mpq(numbers.Rational):
             if other.numerator >= 0:
                 return self.numerator**other.numerator
             else:
-                return mpq(1)/self.numerator**(-other.numerator)
+                return mpq(1) / self.numerator**(-other.numerator)
         return NotImplemented
 
     def __rpow__(self, other, mod=None):
@@ -453,7 +454,7 @@ class mpq(numbers.Rational):
         raise NotImplementedError
 
     def __int__(self):
-        return int(self.numerator//self.denominator)
+        return int(self.numerator // self.denominator)
 
     def __round__(self):
         raise NotImplementedError

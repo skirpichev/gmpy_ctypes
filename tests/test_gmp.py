@@ -1,13 +1,15 @@
+"""Basic tests for gmpy_ctypes."""
+
 import math
 
 import hypothesis
 
-from gmpy_ctypes import mpq, mpz
+from gmpy_ctypes import mpz
 
 
 @hypothesis.given(x=hypothesis.strategies.integers(-1000, 1000),
                   y=hypothesis.strategies.integers(-1000, 1000))
-@hypothesis.settings(deadline=300)
+@hypothesis.settings(deadline=None)
 @hypothesis.example(x=42, y=0)
 def test_mpz(x, y):
     mx, my = mpz(x), mpz(y)

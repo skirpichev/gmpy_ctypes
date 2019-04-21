@@ -1,1 +1,3 @@
-from .gmp import mpq, mpz, gcd, gcdext, lcm, fac
+"""A ctypes-based Python interface to GNU GMP."""
+
+from .gmp import fac, gcd, gcdext, lcm, mpq, mpz
