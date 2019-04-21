@@ -5,10 +5,7 @@ import ctypes.util
 import numbers
 
 
-# find the GMP library
 _libgmp_path = ctypes.util.find_library('gmp')
-if not _libgmp_path:
-    raise EnvironmentError('Unable to find libgmp')
 _libgmp = ctypes.CDLL(_libgmp_path)
 
 
@@ -264,9 +261,9 @@ class mpz(numbers.Integral):
             other = mpz(other)
         if mod is not None and not isinstance(mod, mpz):
             mod = mpz(mod)
+        ret = mpz()
         if other < 0:
             raise ValueError
-        ret = mpz()
         if mod:
             _MPZ_powm(ret, self, other, mod)
         else:
