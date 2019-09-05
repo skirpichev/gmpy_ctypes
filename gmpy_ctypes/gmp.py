@@ -210,7 +210,7 @@ class mpz(numbers.Integral):
         return self.__apply_ret(_MPZ_and, mpz(), other, self)
 
     def __lshift__(self, other):
-        raise NotImplementedError
+        return self * (self.__class__(2)**other)
 
     def __rlshift__(self, other):
         raise NotImplementedError

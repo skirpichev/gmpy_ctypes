@@ -22,6 +22,7 @@ jobs:
         sudo apt install libmpc-dev libmpfr-dev libgmp-dev
     - name: Install dependencies
       run: |
+        pip install -U pip setuptools
         pip install .[develop]
     - name: Lint with flake8
       run: |
