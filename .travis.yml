@@ -16,7 +16,6 @@ addons:
 install:
   - pip install .[develop]
 script:
-  - echo $TERM
   - flake8
   - python setup.py test --addopts "--cov gmpy_ctypes"
   - codecov
